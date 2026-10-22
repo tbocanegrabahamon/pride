@@ -37,4 +37,8 @@ class Setup:
         for delay in self.delays.values():
             delay["data"] = external / delay["data"]
 
+        # Doppler predictions [Optional section]
+        self.doppler: dict[str, Any] = config.get("Doppler", {})
+        self.doppler.setdefault("calculate", False)
+
         return None

@@ -100,6 +100,11 @@ class Experiment:
 
         return None
 
+    @property
+    def vex(self) -> "io.Vex":
+        """Interface to the VEX file of the experiment"""
+        return self.__vex
+
     def __ensure_spice_kernels(self, target: str) -> Path:
         """Ensure SPICE kernels are available for the target
 

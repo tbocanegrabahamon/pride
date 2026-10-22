@@ -1,4 +1,5 @@
 from .experiment import Experiment
+from .doppler import DopplerPredictor
 import argparse
 from .logger import log
 
@@ -48,6 +49,10 @@ def process_experiment() -> None:
 
                 # Calculate delays for the observation
                 observation.calculate_delays(experiment.delay_models)
+
+        # Calculate Doppler predictions for the near-field target
+        if experiment.setup.doppler["calculate"]:
+            DopplerPredictor(experiment).run()
 
     experiment.save_output()
 
