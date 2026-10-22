@@ -328,6 +328,10 @@ class Experiment:
         experiment_baselines: list["Baseline"] = []
         for station_id in observation_bands:
 
+            # Skip stations in the list of ignored stations
+            if station_id not in stations_dictionary:
+                continue
+
             # Initialize container with observations for this station
             station_observations: list["Observation"] = []
 
@@ -445,6 +449,10 @@ class Experiment:
 
             # Loop over stations in scan
             for station_id in scan_stations:
+
+                # Skip stations in the list of ignored stations
+                if station_id in self.setup.general["ignore_stations"]:
+                    continue
 
                 # Get observation for this scan
                 assert (station_id, scan_source) in observations  # Sanity
