@@ -50,6 +50,13 @@ def process_experiment() -> None:
                 # Calculate delays for the observation
                 observation.calculate_delays(experiment.delay_models)
 
+                # Calculate UVW projections for the observation
+                if experiment.setup.uvw["calculate"]:
+                    observation.calculate_uvw(
+                        experiment.setup.uvw["method"],
+                        experiment.delay_models,
+                    )
+
         # Calculate Doppler predictions for the near-field target
         if experiment.setup.doppler["calculate"]:
             DopplerPredictor(experiment).run()

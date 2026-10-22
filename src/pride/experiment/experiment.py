@@ -469,6 +469,10 @@ class Experiment:
                 )
                 scan_tstamps = observation.tstamps[scan_mask]
                 scan_delays = observation.delays[scan_mask]
+                if observation.has_uvw:
+                    scan_u, scan_v, scan_w = observation.uvw[scan_mask].T
+                else:
+                    scan_u = scan_v = scan_w = np.zeros_like(scan_delays)
 
                 # Get integral part of MJD
                 _mjd = np.array(scan_tstamps.mjd, dtype=int)  # type: ignore
@@ -480,12 +484,19 @@ class Experiment:
                 mjd2 = (mjd_diff + _mjd2).to("s").value  # type: ignore
 
                 # Write data to output file
-                # NOTE: Current version of the program does not include
-                # Doppler shifts or UVW projections. These entries are set
-                # to zero (to 1 for the amplitude of the Doppler shift)
+                # NOTE: UVW projections are set to zero if not calculated.
+                # The Doppler phase is set to zero, and its amplitude to 1.
                 zero = np.zeros_like(mjd2)
                 data = np.array(
-                    [mjd2, zero, zero, zero, scan_delays, zero, zero + 1.0]
+                    [
+                        mjd2,
+                        scan_u,
+                        scan_v,
+                        scan_w,
+                        scan_delays,
+                        zero,
+                        zero + 1.0,
+                    ]
                 ).T
                 output_files[station_id].add_scan(
                     scan_id, scan_data.vex_source_name, mjd1, data
