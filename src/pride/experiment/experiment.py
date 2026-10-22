@@ -16,7 +16,6 @@ from .baseline import Baseline
 from .observation import Observation
 import numpy as np
 from .. import utils
-from ..io.vex.interface import VEX_DATE_FORMAT
 
 if TYPE_CHECKING:
     from ..displacements.core import Displacement
@@ -418,34 +417,23 @@ class Experiment:
         # sorted_scans = sorted([s for s in self.vex["SCHED"]])
         for scan_id in sorted_scans:
 
-            _scan_data = self.__vex.load_single_scan_data(
+            # Scan data from the VEX file. The source name is the internal ID
+            # (short name of the target for scans of the target), and the
+            # stations are in the order of the VEX file
+            scan_data = self.__vex.load_single_scan_data(
                 scan_id, self.target["short_name"]
             )
+            scan_source = scan_data.source_name
+            scan_stations = list(scan_data.offsets_per_station.keys())
 
-            _stations = list(_scan_data.offsets_per_station.keys())
-
-            # IDs of stations involved in scan
-            scan_data = self.__vex._Vex__content["SCHED"][scan_id].getall(
-                "station"
+            # Initial and final epochs for scan
+            # NOTE: The final epoch is taken from the end offset of the first
+            # station in the scan, and used for all the stations
+            t0 = time.Time(scan_data.initial_epoch, scale="utc")
+            dt = time.TimeDelta(
+                scan_data.offsets_per_station[scan_stations[0]][1], format="sec"
             )
-            scan_stations = [s[0] for s in scan_data]
-            assert scan_stations == _stations  # Sanity check
-
-            # VEX-file and internal ID of source
-            _scan_sources = [
-                self.__vex._Vex__content["SCHED"][scan_id]["source"]
-            ]
-            if len(_scan_sources) != 1:
-                log.error(f"Scan {scan_id} has multiple sources")
-                exit(1)
-            scan_source_id = _scan_sources[0]  # ID from VEX file
-
-            _source_data = self.__vex._Vex__content["SOURCE"][scan_source_id]
-            if _source_data["source_type"] == "target":
-                scan_source = self.target["short_name"]  # Internal ID
-            else:
-                scan_source = scan_source_id  # Internal ID
-            assert scan_source == _scan_data.source_name  # Sanity check
+            tend = t0 + dt
 
             # Loop over stations in scan
             for station_id in scan_stations:
@@ -457,16 +445,6 @@ class Experiment:
                 # Get observation for this scan
                 assert (station_id, scan_source) in observations  # Sanity
                 observation = observations[(station_id, scan_source)]
-
-                # Initial and final epochs for scan
-                t0 = time.Time.strptime(
-                    self.__vex._Vex__content["SCHED"][scan_id]["start"],
-                    VEX_DATE_FORMAT,
-                )
-                dt = time.TimeDelta(
-                    int(scan_data[0][2].split()[0]), format="sec"
-                )
-                tend = t0 + dt
 
                 # Timestamps and delays of current scan
                 scan_mask = (observation.tstamps >= t0) & (
@@ -493,7 +471,7 @@ class Experiment:
                     [mjd2, zero, zero, zero, scan_delays, zero, zero + 1.0]
                 ).T
                 output_files[station_id].add_scan(
-                    scan_id, scan_source_id, mjd1, data
+                    scan_id, scan_data.vex_source_name, mjd1, data
                 )
 
         return None
