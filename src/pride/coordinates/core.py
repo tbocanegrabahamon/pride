@@ -90,6 +90,12 @@ class EOP:
         return None
 
     def __eops(self, mjds) -> np.ndarray:
+        """EOPs from the table at given MJDs (linear interpolation)
+
+        :param mjds: Modified Julian Dates
+        :return: EOPs as a (5, N) array in the order UT1-UTC [s], X, Y, dX, dY
+        [arcsec], as expected by `at_epoch`
+        """
 
         if np.any(mjds < self.__mjd_range[0]) or np.any(
             mjds > self.__mjd_range[1]
@@ -99,9 +105,9 @@ class EOP:
 
         return np.array(
             [
+                self.__eops_dict["ut1_utc"](mjds),
                 self.__eops_dict["xp"](mjds),
                 self.__eops_dict["yp"](mjds),
-                self.__eops_dict["ut1_utc"](mjds),
                 self.__eops_dict["dx"](mjds),
                 self.__eops_dict["dy"](mjds),
             ]
