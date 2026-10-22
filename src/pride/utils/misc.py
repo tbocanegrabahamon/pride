@@ -2,7 +2,7 @@ import numpy as np
 from astropy import units
 import datetime
 from ..logger import log
-from .. import io
+from ..internal_configuration import internal_parameter
 import math
 from typing import Sequence, Callable, Any
 from scipy import interpolate
@@ -77,13 +77,13 @@ def discretize_scan(
 
     # Calculate the scan duration and a tentative step size
     scan_duration: int = final_offset - initial_offset
-    min_extra_points: int = int(io.internal_parameter("min_obs_per_scan")) - 1
+    min_extra_points: int = int(internal_parameter("min_obs_per_scan")) - 1
     tentative_step: float = scan_duration / min_extra_points
 
     # Calculate number of extra points based on internal constraints
     # Number of observation is number of extra points + 1 (beginning)
-    default_scan_step: float = float(io.internal_parameter("default_scan_step"))
-    min_scan_step: float = float(io.internal_parameter("min_scan_step"))
+    default_scan_step: float = float(internal_parameter("default_scan_step"))
+    min_scan_step: float = float(internal_parameter("min_scan_step"))
     if tentative_step > default_scan_step:
 
         number_of_extra_points = math.ceil(scan_duration / default_scan_step)
