@@ -149,7 +149,10 @@ class Observation:
 
         val = super().__getattribute__(name)
         if val is NotImplemented:
-            log.error(f"Attribute {name} is not set for {self.baseline.id}")
+            log.error(
+                f"Attribute {name} is not set for observation of "
+                f"{self.source.name} from {self.station.name}"
+            )
             exit(1)
         return val
 

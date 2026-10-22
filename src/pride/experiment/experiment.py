@@ -32,7 +32,7 @@ class Experiment:
         _setup_path = Path(setup).absolute()
         if not _setup_path.is_file():
             log.error(
-                f"Failed to initialize {self.name} experiment: "
+                "Failed to initialize experiment: "
                 f"Configuration file {_setup_path} not found"
             )
             exit(1)

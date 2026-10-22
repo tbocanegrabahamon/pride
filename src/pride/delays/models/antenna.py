@@ -318,7 +318,6 @@ class AntennaDelays(Delay):
                     )
                 ) / CLIGHT
             case "MO_XYNO" | "MO_XYEA":
-                print("using this one")
                 return (
                     antenna.gamma_hf * dT * antenna.hf * np.sin(el)
                     + antenna.gamma_hp
