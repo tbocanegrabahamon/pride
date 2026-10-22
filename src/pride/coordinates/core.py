@@ -187,11 +187,16 @@ class EOP:
 def seu2itrf(lat: np.ndarray, lon: np.ndarray) -> np.ndarray:
     """Rotation matrix from SEU to ITRF
 
+    The local South-East-Up frame is obtained from ITRF by a rotation of -lon about
+    the z axis followed by a rotation of -(pi/2 - lat) (minus the colatitude) about
+    the y axis. (Before 2026-10-07 the latitude was used instead of the colatitude,
+    which is only correct at 45° latitude.)
+
     :param lat: Geodetic latitude in radians
     :param lon: Geodetic longitude in radians
     :return: Rotation matrix from SEU to ITRF as (N, 3, 3) array
     """
-    return erfa.rz(-lon, erfa.ry(-lat, np.eye(3)))
+    return erfa.rz(-lon, erfa.ry(-(0.5 * np.pi - lat), np.eye(3)))
 
 
 def icrf2itrf(eops: np.ndarray, epoch: "time.Time") -> np.ndarray:
