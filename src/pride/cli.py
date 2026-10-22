@@ -58,9 +58,11 @@ def process_experiment() -> None:
                     )
 
         # Calculate Doppler predictions for the near-field target
+        doppler = None
         if experiment.setup.doppler["calculate"]:
-            DopplerPredictor(experiment).run()
+            doppler = DopplerPredictor(experiment)
+            doppler.run()
 
-    experiment.save_output()
+    experiment.save_output(doppler)
 
     return None

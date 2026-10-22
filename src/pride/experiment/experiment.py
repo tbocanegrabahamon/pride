@@ -20,6 +20,7 @@ from .. import utils
 if TYPE_CHECKING:
     from ..displacements.core import Displacement
     from ..delays.core import Delay
+    from ..doppler import DopplerPredictor
 
 
 SCAN_LIMITS_TOLERANCE: float = 1e-6
@@ -270,6 +271,8 @@ class Experiment:
                     initial_offset,
                     final_offset,
                     scan_id,
+                    self.setup.general.get("scan_step"),
+                    self.setup.general.get("force_scan_step", False),
                 )
 
                 # If station is not in dictionaries, add it
@@ -391,7 +394,11 @@ class Experiment:
 
         return None
 
-    def save_output(self) -> None:
+    def save_output(self, doppler: "DopplerPredictor | None" = None) -> None:
+        """Write one .del file per station
+
+        :param doppler: Doppler predictions of the experiment. If given, the Doppler phase of the scans of the target is written in the .del files (see `DopplerPredictor.doppler_phase`); otherwise, the phase is set to zero.
+        """
 
         log.warning("The save_output method should be refactored!")
 
@@ -474,6 +481,13 @@ class Experiment:
                 else:
                     scan_u = scan_v = scan_w = np.zeros_like(scan_delays)
 
+                # Doppler phase [Only for the target]
+                scan_phase = None
+                if doppler is not None and scan_source == self.target["short_name"]:
+                    scan_phase = doppler.doppler_phase(station_id, scan_tstamps)
+                if scan_phase is None:
+                    scan_phase = np.zeros_like(scan_delays)
+
                 # Get integral part of MJD
                 _mjd = np.array(scan_tstamps.mjd, dtype=int)  # type: ignore
                 mjd1 = _mjd[0]
@@ -484,8 +498,8 @@ class Experiment:
                 mjd2 = (mjd_diff + _mjd2).to("s").value  # type: ignore
 
                 # Write data to output file
-                # NOTE: UVW projections are set to zero if not calculated.
-                # The Doppler phase is set to zero, and its amplitude to 1.
+                # NOTE: UVW projections and Doppler phase are set to zero if
+                # not calculated. The Doppler amplitude is always set to 1.
                 zero = np.zeros_like(mjd2)
                 data = np.array(
                     [
@@ -494,7 +508,7 @@ class Experiment:
                         scan_v,
                         scan_w,
                         scan_delays,
-                        zero,
+                        scan_phase,
                         zero + 1.0,
                     ]
                 ).T
