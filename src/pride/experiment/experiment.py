@@ -22,6 +22,10 @@ if TYPE_CHECKING:
     from ..delays.core import Delay
 
 
+SCAN_LIMITS_TOLERANCE: float = 1e-6
+"""Tolerance when selecting the epochs of a scan in the .del output [s]"""
+
+
 class Experiment:
     """VLBI experiment"""
 
@@ -426,14 +430,8 @@ class Experiment:
             scan_source = scan_data.source_name
             scan_stations = list(scan_data.offsets_per_station.keys())
 
-            # Initial and final epochs for scan
-            # NOTE: The final epoch is taken from the end offset of the first
-            # station in the scan, and used for all the stations
-            t0 = time.Time(scan_data.initial_epoch, scale="utc")
-            dt = time.TimeDelta(
-                scan_data.offsets_per_station[scan_stations[0]][1], format="sec"
-            )
-            tend = t0 + dt
+            # Reference epoch of the scan
+            scan_start = time.Time(scan_data.initial_epoch, scale="utc")
 
             # Loop over stations in scan
             for station_id in scan_stations:
@@ -445,6 +443,20 @@ class Experiment:
                 # Get observation for this scan
                 assert (station_id, scan_source) in observations  # Sanity
                 observation = observations[(station_id, scan_source)]
+
+                # Initial and final epochs of the scan for this station
+                # NOTE: Widened by a small tolerance, since epochs that are
+                # equal to the scan limits can differ from them by ~1e-11 s
+                # after the time arithmetic
+                initial_offset, final_offset = scan_data.offsets_per_station[
+                    station_id
+                ]
+                t0 = scan_start + time.TimeDelta(
+                    initial_offset - SCAN_LIMITS_TOLERANCE, format="sec"
+                )
+                tend = scan_start + time.TimeDelta(
+                    final_offset + SCAN_LIMITS_TOLERANCE, format="sec"
+                )
 
                 # Timestamps and delays of current scan
                 scan_mask = (observation.tstamps >= t0) & (
